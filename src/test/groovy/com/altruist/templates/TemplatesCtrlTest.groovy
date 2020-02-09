@@ -1,6 +1,6 @@
 package com.altruist.templates
 
-import com.altruist.ErrorCodes
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
@@ -82,7 +82,7 @@ class TemplatesCtrlTest extends Specification {
         )
 
         then: "the template is persisted"
-        1 * mockTemplatesService.save(template)
+        1 * mockTemplatesService.saveIfNotPresent(template)
 
         and: "the created response is returned"
         resultActions.andExpect(status().isCreated())
@@ -107,7 +107,7 @@ class TemplatesCtrlTest extends Specification {
         ResultActions resultActions = mvc.perform(builder)
 
         then: "the template is rejected"
-        2 * mockTemplatesService.save(template) >> {} >> { throw new EntityExistsException("Template exists") }
+        2 * mockTemplatesService.saveIfNotPresent(template) >> {} >> { throw new EntityExistsException("Template exists") }
 
         and: "the client error response is returned"
         resultActions.andExpect(status().is4xxClientError())

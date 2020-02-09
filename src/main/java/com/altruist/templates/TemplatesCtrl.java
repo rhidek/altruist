@@ -28,7 +28,7 @@ public class TemplatesCtrl {
     @PostMapping(path = "", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> save(@RequestBody TemplateDTO templateDTO,
                                      HttpServletRequest request) throws URISyntaxException {
-        templatesService.save(templateDTO);
+        templatesService.saveIfNotPresent(templateDTO);
         return ResponseEntity.created(new URI(request.getRequestURL() + "/" + templateDTO.getId()))
                              .build();
     }
