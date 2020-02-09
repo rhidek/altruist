@@ -21,7 +21,7 @@ class TemplatesServiceTest extends Specification {
         service.saveIfNotPresent(dto)
 
         then: "the DTO is marshalled to an entity and passed to the underlying repo"
-        1 * mockRepo.save(_) >> {Template t ->
+        1 * mockRepo.save(_) >> { Template t ->
             assert t.id == id
             assert t.text == text
         }
@@ -41,5 +41,20 @@ class TemplatesServiceTest extends Specification {
 
         then: "the save is rejected"
         thrown(EntityExistsException)
+    }
+
+    def "Should load all templates"() {
+        given: "some templates exist"
+        mockRepo.findAll() >> [new Template(id: "1", text: "1"), new Template(id: "2", text: "2")]
+
+        when: "findAll is called"
+        List<TemplateDTO> all = service.findAll()
+
+        then: "all templates are loaded"
+        all.size() == 2
+        all[0].id == "1"
+        all[0].text == "1"
+        all[1].id == "2"
+        all[1].text == "2"
     }
 }

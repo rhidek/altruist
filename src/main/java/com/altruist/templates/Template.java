@@ -1,13 +1,18 @@
 package com.altruist.templates;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
+@Getter
+@Setter
 @Entity
 public class Template {
     @Id
-    public String id;
+    private String id;
     @Column(columnDefinition = "text")
-    public String text;
+    private String text;
 }

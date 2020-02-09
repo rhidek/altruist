@@ -1,6 +1,6 @@
 package com.altruist.templates
 
-
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
@@ -19,10 +19,9 @@ import javax.persistence.EntityExistsException
 
 import static com.altruist.ErrorCodes.DUPLICATE_CREATION
 import static org.hamcrest.Matchers.containsString
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 @WebMvcTest(controllers = [TemplatesCtrl])
 class TemplatesCtrlTest extends Specification {
@@ -115,6 +114,26 @@ class TemplatesCtrlTest extends Specification {
         and: "the location header is populated"
         resultActions.andExpect(jsonPath("\$.code",).value(DUPLICATE_CREATION.toString()))
         resultActions.andExpect(jsonPath("\$.message",).value("Template id existed. Please choose another template id."))
+    }
+
+    def "Should load all templates"() {
+        given: "Some saved templates exist"
+        List<TemplateDTO> expected = [new TemplateDTO("1", "1"), new TemplateDTO("2", "2")]
+        mockTemplatesService.findAll() >> expected
+
+        when: "all templates are requested"
+        ResultActions resultActions = mvc.perform(
+            get(basePath)
+                .accept(MediaType.APPLICATION_JSON)
+        )
+        String body = resultActions.andReturn().response.getContentAsString()
+        List<TemplateDTO> returned = objectMapper.readValue(body, new TypeReference<List<TemplateDTO>>() {})
+
+        then: "the OK status is returned"
+        resultActions.andExpect(status().isOk())
+
+        and: "all templates are returned"
+        returned == expected
     }
 
     @TestConfiguration

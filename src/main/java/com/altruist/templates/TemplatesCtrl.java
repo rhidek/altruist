@@ -11,6 +11,7 @@ import javax.persistence.EntityExistsException;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -25,12 +26,18 @@ public class TemplatesCtrl {
      * I returned 201 rather than 200 with a '{"Template is created successfully"}' body (which is invalid JSON as well).
      * I also returned the standard "Location" header as is required by HTTP spec.
      */
-    @PostMapping(path = "", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    @PostMapping(path = "", consumes = APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> save(@RequestBody TemplateDTO templateDTO,
                                      HttpServletRequest request) throws URISyntaxException {
         templatesService.saveIfNotPresent(templateDTO);
         return ResponseEntity.created(new URI(request.getRequestURL() + "/" + templateDTO.getId()))
                              .build();
+    }
+
+    //TODO: add pagination
+    @GetMapping(path = "", produces = APPLICATION_JSON_VALUE)
+    public List<TemplateDTO> getAll(){
+        return templatesService.findAll();
     }
 
     /**
