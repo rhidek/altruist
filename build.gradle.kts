@@ -9,6 +9,7 @@ plugins {
     kotlin("plugin.spring")
     id("org.springframework.boot")
     id("io.spring.dependency-management") version "1.0.9.RELEASE"
+    id("io.freefair.lombok") version "4.1.6"
 }
 
 group = "com.altruist"
@@ -57,8 +58,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-hateoas")
-//    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("com.h2database:h2")
 
     testImplementation("org.codehaus.groovy:groovy-all:2.5.8")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
