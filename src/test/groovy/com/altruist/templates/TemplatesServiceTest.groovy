@@ -57,4 +57,21 @@ class TemplatesServiceTest extends Specification {
         all[1].id == "2"
         all[1].text == "2"
     }
+
+    def "Should perform template substitutions"() {
+        given: "a template with variables"
+        String id = "1"
+        String text = 'text $var1 text $var2text'
+        Template template = new Template(id: id, text: text)
+        mockRepo.findById(id) >> Optional.of(template)
+
+        and: "variable substitutions"
+        Map<String, String> substitutions = [var1: "1234", var2: "4321"]
+
+        when: "a substitution request is made"
+        String substituted = service.loadAndSubstitute(id, substitutions)
+
+        then: "the template is returned with the variables substituted"
+        substituted == 'text 1234 text 4321text'
+    }
 }

@@ -6,7 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -34,6 +37,22 @@ public class TemplatesService {
                                         .spliterator(), true)
                             .map(this::toDTO)
                             .collect(Collectors.toList());
+    }
+
+    public String loadAndSubstitute(String templateId, Map<String, String> substitutions) {
+        Objects.requireNonNull(templateId);
+        Objects.requireNonNull(substitutions);
+        return repo.findById(templateId)
+                   .map(template -> this.substitute(template, substitutions))
+                   .orElseThrow(EntityNotFoundException::new);
+    }
+
+    private String substitute(Template template, Map<String, String> substitutions) {
+        String text = template.getText();
+        for (Entry<String, String> entry : substitutions.entrySet()) {
+            text = text.replaceAll("\\$" + entry.getKey(), entry.getValue());
+        }
+        return text;
     }
 
     private Template toDomain(TemplateDTO templateDTO) {

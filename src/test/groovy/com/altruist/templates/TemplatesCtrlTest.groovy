@@ -16,8 +16,10 @@ import spock.lang.Specification
 import spock.mock.DetachedMockFactory
 
 import javax.persistence.EntityExistsException
+import javax.persistence.EntityNotFoundException
 
 import static com.altruist.ErrorCodes.DUPLICATE_CREATION
+import static com.altruist.ErrorCodes.NOT_FOUND
 import static org.hamcrest.Matchers.containsString
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -35,6 +37,7 @@ class TemplatesCtrlTest extends Specification {
     TemplatesService mockTemplatesService
 
     String basePath = "/templates"
+    String substitutionPath = "$basePath/{templateId}/compose"
 
     def "Serializes DTO"() {
         given: "a template"
@@ -110,10 +113,8 @@ class TemplatesCtrlTest extends Specification {
 
         and: "the client error response is returned"
         resultActions.andExpect(status().is4xxClientError())
-
-        and: "the location header is populated"
-        resultActions.andExpect(jsonPath("\$.code",).value(DUPLICATE_CREATION.toString()))
-        resultActions.andExpect(jsonPath("\$.message",).value("Template id existed. Please choose another template id."))
+        resultActions.andExpect(jsonPath("\$.code").value(DUPLICATE_CREATION.toString()))
+        resultActions.andExpect(jsonPath("\$.message").value("Template id existed. Please choose another template id."))
     }
 
     def "Should load all templates"() {
@@ -134,6 +135,57 @@ class TemplatesCtrlTest extends Specification {
 
         and: "all templates are returned"
         returned == expected
+    }
+
+    def "Should load and substitute templates"() {
+        given: "an existing template"
+        String templateId = "template-id"
+
+        and: "substitutions"
+        Map<String, String> substitutions = [var1: "value 1", var2: "value 2"]
+        String expected = "substituted text"
+
+        when: "the substitution is requested"
+        ResultActions resultActions = mvc.perform(
+            get(substitutionPath, templateId)
+                .queryParam('var1', substitutions['var1'])
+                .queryParam('var2', substitutions['var2'])
+                .accept(MediaType.APPLICATION_JSON)
+        )
+
+        then: "the template is loaded and substituted"
+        1 * mockTemplatesService.loadAndSubstitute(templateId, substitutions) >> expected
+
+        and: "the OK response is returned"
+        resultActions.andExpect(status().isOk())
+
+        and: "the substituted value is returned"
+        resultActions.andExpect(jsonPath("\$.messageText").value(expected))
+    }
+
+    def "Should return NOT FOUND for queries using non-existent template IDs"() {
+        given: "a template that does NOT exist"
+        String templateId = "template-id"
+
+        and: "substitutions"
+        Map<String, String> substitutions = [var1: "value 1", var2: "value 2"]
+
+        when: "the substitution is requested"
+        ResultActions resultActions = mvc.perform(
+            get(substitutionPath, templateId)
+                .queryParam('var1', substitutions['var1'])
+                .queryParam('var2', substitutions['var2'])
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+        )
+
+        then: "the template is loaded and substituted"
+        1 * mockTemplatesService.loadAndSubstitute(templateId, substitutions) >> { throw new EntityNotFoundException() }
+
+        and: "the Not Found response is returned"
+        resultActions.andExpect(status().isNotFound())
+        resultActions.andExpect(jsonPath("\$.code").value(NOT_FOUND.toString()))
+        resultActions.andExpect(jsonPath("\$.message").value("Template ID not found."))
     }
 
     @TestConfiguration

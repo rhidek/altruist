@@ -8,10 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityExistsException;
+import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -36,16 +38,31 @@ public class TemplatesCtrl {
 
     //TODO: add pagination
     @GetMapping(path = "", produces = APPLICATION_JSON_VALUE)
-    public List<TemplateDTO> getAll(){
+    public List<TemplateDTO> getAll() {
         return templatesService.findAll();
     }
 
+    @GetMapping(path = "/{templateId}/compose", produces = APPLICATION_JSON_VALUE)
+    public MessageDTO compose(@PathVariable String templateId,
+                              @RequestParam Map<String, String> params) {
+        return new MessageDTO(templatesService.loadAndSubstitute(templateId, params));
+    }
+
     /**
-     * Deviated from spec here to add an ErrorCode.  This allows programmatic consumers to process the response easier.
+     * Deviated from requirements here to add an ErrorCode.  This allows programmatic consumers to process the response easier.
      */
     @ExceptionHandler(EntityExistsException.class)
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
-    private ErrorDto handleDuplicate(EntityExistsException exception){
+    private ErrorDto handleDuplicate(EntityExistsException exception) {
         return new ErrorDto(ErrorCodes.DUPLICATE_CREATION, "Template id existed. Please choose another template id.");
+    }
+
+    /**
+     * Deviated from requirements here to return 404 NOT FOUND response to missing resource per HTTP spec.
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
+    private ErrorDto handleMissing(EntityNotFoundException exception){
+        return new ErrorDto(ErrorCodes.NOT_FOUND, "Template ID not found."); //normally no body is returned for 404
     }
 }
